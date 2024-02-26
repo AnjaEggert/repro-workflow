@@ -1,0 +1,127 @@
+---
+title: "Read Excel data sheet"
+author: "Anja Eggert"
+date: "`r Sys.Date()`" 
+editor: visual
+code-fold: false
+toc: true
+format: html
+self-contained: true
+theme: readable
+#bibliography: references.bib
+---
+
+# Reproducibility workshop
+
+This code reads in an example *Excel* data table.
+
+# Libraries
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r, libraries, warning=FALSE, message=FALSE, echo=TRUE}
+library(kableExtra)  # html-table
+library(readxl)      # read Excel files
+library(tidyverse)   # tidy universe
+```
+
+# Read data
+
+By default, the working directory for rendering files within a project is the directory of the file itself, here the subdirectory `code`.
+
+You can play setting different arguments, e.g. exclude `.name_repair = "universal"`
+
+```{r}
+dat <- read_xlsx("../data/mydata.xlsx",
+                 na = "a", .name_repair = "universal")
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+## Data adjustments
+
+-   define variables as factors
+-   define dates as date
+
+```{r}
+dat <- dat %>% 
+  # make factors
+  mutate_at(vars(SCHLNR,
+                 RASSE,
+                 HERK,
+                 Haltung) , ~as.factor(.)) %>% 
+  # make date
+  mutate_at(vars(GEBDAT,
+                 SCHLDAT) , ~as.Date(.))
+```
+
+## Create data table
+
+```{r}
+dat %>% 
+  kable(caption = "Data set") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                font_size = 12) %>% 
+  scroll_box(width = "800px", height = "500px")
+```
+
+# Plot data
+
+```{r}
+plot <- dat %>%
+  ggplot(aes(x = Haltung,
+             y = Sum.PUFAmg,
+             fill = RASSE)) +
+  geom_boxplot(col = "grey30",
+               outlier.shape = NA, width=0.75,
+               position = position_dodge(0.75)) +
+  geom_point(aes(shape = HERK),
+             col = "grey60", size = 2.5,
+             position = position_jitterdodge()) +
+  scale_y_continuous(limits = c(0, 400),
+                     expand = c(0, 0),
+                     breaks = seq(0,400,50)) +
+  scale_fill_manual(values = c("#440154FF", "#21908CFF", "#FDE725FF")) +
+  labs(x = "Haltung",
+       y = "Summe PUFAs (mg)") +
+  theme_bw() +
+  guides(fill = guide_legend(override.aes = list(shape = NA)))
+```
+
+```{r, fig.height=10, fig.width=10, warning=FALSE}
+plot
+```
+
+## Save plot
+
+```{r}
+png("../plots/myplot.png",
+    width = 200, height = 180, units = "mm",
+    pointsize = 10, res = 600)
+
+plot
+
+dev.off()
+```
+
+# How to cite R
+
+"All analyses were performed using R Statistical Software (version 4.2.0; R Core Team 2022)".
+
+Reference: R Core Team (2022). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+
+```{r, cite-r}
+citation()
+version$version.string
+```
+
+```{r, cite-packages}
+citation("kableExtra")
+citation("tidyverse")
+```
+
+# Session Info
+
+```{r, session}
+sessionInfo()
+```
